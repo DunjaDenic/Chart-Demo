@@ -1,0 +1,18 @@
+{
+    "goal": 2300,
+    "value": 2400,
+    "subcategories": {
+        "job": {
+            "goal": 1500,
+            "value": 1600
+        },
+        "side hustle": {
+            "goal": 400,
+            "value": 400
+        },
+        "apartment rental": {
+            "goal": 500,
+            "value": 500
+        }
+    }
+}

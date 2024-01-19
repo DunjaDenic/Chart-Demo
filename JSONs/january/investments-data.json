@@ -1,0 +1,14 @@
+{
+    "goal": 700,
+    "value": 800,
+    "subcategories": {
+        "retirement fund": {
+            "goal": 500,
+            "value": 600
+        },
+        "business investment": {
+            "goal": 200,
+            "value": 200
+        }
+    }
+}

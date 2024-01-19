@@ -1,0 +1,26 @@
+{
+    "goal": 1600,
+    "value": 1400,
+    "subcategories": {
+        "rent": {
+            "goal": 900,
+            "value": 900
+        },
+        "food": {
+            "goal": 400,
+            "value": 300
+        },
+        "fun": {
+            "goal": 200,
+            "value": 100
+        },
+        "gym": {
+            "goal": 50,
+            "value": 50
+        },
+        "courses": {
+            "goal": 50,
+            "value": 50
+        }
+    }
+}
