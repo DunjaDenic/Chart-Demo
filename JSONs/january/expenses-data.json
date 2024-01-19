@@ -1,6 +1,6 @@
 {
-    "goal": 1600,
-    "value": 1400,
+    "goal": 1700,
+    "value": 1450,
     "subcategories": {
         "rent": {
             "goal": 900,
@@ -20,6 +20,10 @@
         },
         "courses": {
             "goal": 50,
+            "value": 50
+        },
+        "subscriptions": {
+            "goal": 100,
             "value": 50
         }
     }

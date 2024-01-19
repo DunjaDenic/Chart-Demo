@@ -1,4 +1,5 @@
 const select = document.querySelector("#month-select");
+const numberSection = document.querySelector("#number-section");
 
 const expensesChartContainer = document.querySelector('[data-donut-chart="expenses"]');
 const incomeChartContainer = document.querySelector('[data-donut-chart="income"]');
@@ -22,18 +23,32 @@ class DataTransformer {
             let subcatPercentage = (subcatData.value / jsonData.value) * totalPercentage;
             return {
                 id: subcatName,
-                value: subcatPercentage
+                percentage: subcatPercentage,
+                moneyValue: subcatData.value
             };
         });
 
-        wedges.sort((a, b) => b.value - a.value);
+        wedges.sort((a, b) => b.percentage - a.percentage);
+
+        // Collapse additional wedges into "Other"
+        if (wedges.length > 5) {
+            let otherWedges = wedges.slice(5);
+            let otherTotal = otherWedges.reduce((acc, curr) => acc + curr.moneyValue, 0);
+            let otherPercentage = otherWedges.reduce((acc, curr) => acc + curr.percentage, 0);
+
+            wedges = wedges.slice(0, 5).concat({
+                id: 'other',
+                percentage: otherPercentage,
+                moneyValue: otherTotal
+            });
+        }
 
         if (actualTotal < 100) {
             let emptyWedgePercentage = 100 - totalPercentage;
-
             wedges.push({
                 id: 'empty',
-                value: emptyWedgePercentage
+                percentage: emptyWedgePercentage,
+                moneyValue: 0
             });
         }
 
@@ -46,11 +61,26 @@ class DataTransformer {
 }
 
 class ColorGenerator {
-    static randomRgbColor() {
-        let r = Math.floor(Math.random() * 256);
-        let g = Math.floor(Math.random() * 256);
-        let b = Math.floor(Math.random() * 256);
-        return `rgb(${r},${g},${b})`;
+    static generateGraduatedColors(baseColor, numberOfWedges) {
+        let colors = [];
+        const baseHsl = this.extractHslComponents(baseColor);
+        const lightnessIncrement = 20 / numberOfWedges;
+
+        for (let i = 0; i < numberOfWedges; i++) {
+            let lightness = baseHsl.lightness + (lightnessIncrement * i);
+            colors.push(`hsl(${baseHsl.hue}, ${baseHsl.saturation}%, ${lightness}%)`);
+        }
+
+        return colors;
+    }
+
+    static extractHslComponents(hslString) {
+        let [hue, saturation, lightness] = hslString.match(/\d+/g);
+        return {
+            hue: parseInt(hue),
+            saturation: parseInt(saturation),
+            lightness: parseInt(lightness)
+        };
     }
 }
 
@@ -59,12 +89,12 @@ class SVGPathGenerator {
         this.radius = radius;
     }
 
-    calculatePath(value, offset) {
+    calculatePath(percentage, offset) {
         const startAngle = offset;
-        const endAngle = offset + (360 * value / 100);
+        const endAngle = offset + (360 * percentage / 100);
         const start = this.polarToCartesian(this.radius, startAngle);
         const end = this.polarToCartesian(this.radius, endAngle);
-        const largeArcFlag = value > 50 ? 1 : 0;
+        const largeArcFlag = percentage > 50 ? 1 : 0;
 
         return [
       `M ${this.radius},${this.radius}`,
@@ -116,9 +146,9 @@ class DonutChart {
 
             const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             svg.classList.add('donut-chart-svg');
-            svg.setAttribute('viewBox', `0 0 100 100`);
-            svg.setAttribute('width', '85%');
-            svg.setAttribute('height', '85%');
+            svg.setAttribute('viewBox', `-5 -5 110 110`);
+            svg.setAttribute('width', '90%');
+            svg.setAttribute('height', '90%');
 
             this.config.container.appendChild(svg);
             this.config.container.appendChild(inner);
@@ -130,33 +160,47 @@ class DonutChart {
     }
 
     build() {
+        const chartWrapper = this.config.container.closest('.chart-wrapper');
+        const existingOverview = chartWrapper.querySelector('.number-display');
+        if (existingOverview) {
+            existingOverview.remove();
+        }
+
         const svg = this.config.container.querySelector('.donut-chart-svg');
-        svg.innerHTML = ''; // Clear existing content
+        svg.innerHTML = '';
         this.config.offset = 0;
 
-        this.config.data.wedges.forEach(wedgeData => {
-            this.createWedge(wedgeData, svg);
+        const baseColor = getComputedStyle(document.documentElement)
+            .getPropertyValue(`--${this.config.container.dataset.donutChart}`);
+        const colors = ColorGenerator.generateGraduatedColors(baseColor.trim(), this.config.data.wedges.length);
+
+        this.config.data.wedges.forEach((wedgeData, index) => {
+            const color = wedgeData.id !== 'empty' ? colors[index] : 'none';
+            this.createWedge(wedgeData, svg, color);
         });
 
         this.setChartMeta();
+
+        this.createOverview(chartWrapper, this.config.data.wedges, colors);
     }
 
-    createWedge(data, svg) {
-        const path = this.createSVGPath(data, svg);
+    createWedge(data, svg, color) {
+        const path = this.createSVGPath(data, svg, color);
         svg.appendChild(path);
-        this.config.offset += (360 * data.value) / 100;
+        this.config.offset += (360 * data.percentage) / 100;
     }
 
-    createSVGPath(data, svg) {
+    createSVGPath(data, svg, color, index) {
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute('fill', data.id !== "empty" ? ColorGenerator.randomRgbColor() : 'none');
-        path.setAttribute('d', this.calculatePathData(data.value, this.config.offset));
+        path.setAttribute('fill', color);
+        path.setAttribute('d', this.calculatePathData(data.percentage, this.config.offset));
+        path.classList.add(`chart-path-${index}`); // Assign a unique class
         return path;
     }
 
-    calculatePathData(value, offset) {
+    calculatePathData(percentage, offset) {
         const svgPathGenerator = new SVGPathGenerator(50);
-        return svgPathGenerator.calculatePath(value, offset);
+        return svgPathGenerator.calculatePath(percentage, offset);
     }
 
     setChartMeta() {
@@ -171,6 +215,54 @@ class DonutChart {
         this.config.data = newData;
         this.config.offset = 0;
         this.build();
+    }
+
+    createOverview(container, data, colors) {
+        const overview = document.createElement('div');
+        overview.className = 'number-display';
+        overview.style.width = '100%'; // Ensure the overview takes full width
+
+        let total = 0;
+        data.forEach((wedge, index) => {
+            // Skip the 'empty' wedge
+            if (wedge.id === 'empty') return;
+
+            total += wedge.moneyValue; // Calculate the total value for non-empty wedges
+
+            const item = document.createElement('div');
+            item.className = 'expense-item';
+
+            // Create the colored square
+            const colorSquare = document.createElement('span');
+            colorSquare.className = 'color-square';
+            colorSquare.style.backgroundColor = colors[index]; // Use the corresponding color
+
+            const name = document.createElement('span');
+            name.className = 'expense-name';
+            name.textContent = wedge.id;
+
+            const value = document.createElement('span');
+            value.className = 'expense-value';
+            value.textContent = wedge.moneyValue.toLocaleString();
+
+            item.appendChild(colorSquare);
+            item.appendChild(name);
+            item.appendChild(value);
+            overview.appendChild(item);
+        });
+
+        // Add the total
+        const totalItem = document.createElement('div');
+        totalItem.className = 'expense-item total';
+        const totalName = document.createElement('span');
+        totalName.textContent = 'Total';
+        const totalValue = document.createElement('span');
+        totalValue.textContent = total.toLocaleString();
+        totalItem.appendChild(totalName);
+        totalItem.appendChild(totalValue);
+        overview.appendChild(totalItem);
+
+        container.appendChild(overview);
     }
 }
 

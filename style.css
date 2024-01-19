@@ -1,8 +1,8 @@
 /* General Styles */
 :root {
-    --income: hsl(136, 25%, 65%);
-    --expenses: hsl(354, 30%, 50%);
-    --investments: hsl(52, 81%, 74%);
+    --income: hsl(136, 65%, 65%);
+    --expenses: hsl(354, 65%, 65%);
+    --investments: hsl(50, 65%, 65%);
     --gray: #9b9d9e;
 }
 
@@ -46,6 +46,19 @@ body {
     gap: 30px;
 }
 
+.chart-wrapper {
+    width: 340px;
+    height: 500px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3%;
+    border-radius: 40px;
+    box-shadow: inset rgba(0, 0, 0, 0.5) 0px 0px 20px 0px;
+}
+
 /* Donut Chart Styles */
 .donut-chart {
     position: relative;
@@ -55,7 +68,7 @@ body {
     border-radius: 50%;
     background-color: #f5f7fa;
     -webkit-box-shadow: 0 0 0 6px rgba(0, 0, 0, .2);
-    box-shadow: 0 0 0 6px rgba(0, 0, 0, .2);
+    box-shadow: inset rgba(0, 0, 0, 0.3) 0px 0px 20px 0px;
 }
 
 .outer-circle,
@@ -78,7 +91,7 @@ body {
     left: 22%;
     background-color: #eeeeee;
     z-index: 200;
-    box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, .2);
+    box-shadow: rgba(0, 0, 0, 0.9) 0px 0px 15px 0px;
 }
 
 .inner-circle-label,
@@ -108,9 +121,46 @@ body {
 
 .donut-chart-svg {
     position: absolute;
-    top: 7.5%;
-    left: 7.5%;
+    top: 5%;
+    left: 5%;
     z-index: 100;
 }
 .donut-chart-svg > path {
+    filter: drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.2));
+}
+.number-display {
+    font-size: 14px;
+    margin-top: 20px;
+    overflow: hidden;
+    width: 80%;
+}
+
+.expense-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.expense-name {
+    text-align: left;
+    flex-grow: 1;
+}
+
+.expense-value {
+    text-align: right; 
+    white-space: nowrap; 
+}
+
+.color-square {
+    width: 15px;
+    height: 15px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+.expense-item.total {
+    justify-content: space-between;
+    font-weight: bold;
+    border-top: 1px dashed #ccc;
+    padding-top: 5px;
+    text-align: right;
 }
